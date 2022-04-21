@@ -1,0 +1,87 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-webserver-config
+data:
+  default.conf: |
+    server {
+        listen       80;
+        listen  [::]:80;
+        server_name  localhost;
+    
+        location / {
+            root   /usr/share/nginx/html;
+            index  index.html index.htm;
+        }
+    
+        location /lorem-ipsum {
+           proxy_pass   http://lorem-ipsum;
+        }
+    }
+  index.html: |
+    <html>
+        <body>
+            <h1>example page</h1>
+    
+            <img src="https://picsum.photos/200/300?random=1" />
+    
+            <p id="demo"></p>
+            <script>
+                document.addEventListener('DOMContentLoaded', function(event) {
+                    fetch('/lorem-ipsum')
+                    .then(function (response) {
+                        return response.text()
+                    })
+                    .then(function (data) {
+                        console.info('content has been fetched');
+                        document.getElementById("demo").innerHTML = data;
+                    }).catch((error) => {
+                        console.log(error);
+                    });
+                });
+                </script>
+        </body>
+    </html>
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-webserver
+  labels:
+    app: my-webserver
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: my-webserver
+  template:
+    metadata:
+      labels:
+        app: my-webserver
+    spec:
+      containers:
+      - name: my-webserver
+        image: attiss/my-webserver:1.0
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: index-page
+          mountPath: /usr/share/nginx/html/index.html
+          subPath: index.html
+        - name: nginx-config
+          mountPath: /etc/nginx/conf.d/default.conf
+          subPath: default.conf
+      volumes:
+        - name: index-page
+          configMap:
+            name: my-webserver-config
+            items:
+              - key: index.html
+                path: index.html
+        - name: nginx-config
+          configMap:
+            name: my-webserver-config
+            items:
+              - key: default.conf
+                path: default.conf

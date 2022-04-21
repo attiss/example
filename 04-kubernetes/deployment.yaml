@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-webserver
+  labels:
+    app: my-webserver
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: my-webserver
+  template:
+    metadata:
+      labels:
+        app: my-webserver
+    spec:
+      containers:
+      - name: my-webserver
+        image: attiss/my-webserver:1.0
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-webserver
+spec:
+  ports:
+  - name: http
+    nodePort: 30000
+    port: 80
+    targetPort: 80
+  selector:
+    app: my-webserver
+  type: NodePort
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lorem-ipsum
+  labels:
+    app: lorem-ipsum
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: lorem-ipsum
+  template:
+    metadata:
+      labels:
+        app: lorem-ipsum
+    spec:
+      containers:
+      - name: lorem-ipsum
+        image: attiss/lorem-ipsum:1.0
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: lorem-ipsum
+spec:
+  ports:
+  - name: http
+    nodePort: 30001
+    port: 80
+    targetPort: 80
+  selector:
+    app: lorem-ipsum
+  type: NodePort
